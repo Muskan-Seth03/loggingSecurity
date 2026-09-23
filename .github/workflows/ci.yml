@@ -65,7 +65,7 @@ jobs:
           mvn jacoco:report
 
       # -----------------------------------------
-      # 5. Check Code Coverage >= 20%
+      # 5. Check Code Coverage >= 90%
       # -----------------------------------------
       - name: Check Code Coverage
         shell: bash
@@ -84,6 +84,7 @@ jobs:
               sys.exit(1)
 
           root = tree.getroot()
+
           instruction_counter = None
 
           for counter in root.findall("counter"):
@@ -97,6 +98,7 @@ jobs:
 
           missed = int(instruction_counter.attrib["missed"])
           covered = int(instruction_counter.attrib["covered"])
+
           total = missed + covered
 
           if total == 0:
@@ -104,18 +106,17 @@ jobs:
               sys.exit(1)
 
           coverage = (covered / total) * 100
-          required = 20.0
 
           print(f"Code Coverage: {coverage:.2f}%")
-          print(f"Required Coverage: {required:.2f}%")
+          print("Required Coverage: 90.00%")
 
-          if coverage < required:
+          if coverage < 90:
               print("QUALITY GATE FAILED")
-              print("Code coverage is below the current project baseline.")
+              print("Code coverage is below 90%.")
               sys.exit(1)
 
           print("QUALITY GATE PASSED")
-          print("Code coverage meets the project baseline.")
+          print("Code coverage is 90% or higher.")
           PY
 
       # -----------------------------------------
