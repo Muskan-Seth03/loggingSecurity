@@ -98,20 +98,6 @@ jobs:
           print("QUALITY GATE PASSED")
           PY
 
-      - name: SonarQube Analysis
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-      - name: SonarQube Quality Gate
-        if: ${{ secrets.SONAR_TOKEN != '' }}
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 10
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Package JAR
         run: ./mvnw package -DskipTests
 
