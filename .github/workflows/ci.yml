@@ -40,50 +40,49 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Build and Test
+      - name: Grant execute permission for Maven wrapper
+        run: chmod +x mvnw
+
+      - name: Build and test
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/studentlogindb?useSSL=false&serverTimezone=UTC
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: 1234
-        run: mvn clean verify
+        run: ./mvnw clean verify
 
-      - name: Generate JaCoCo Coverage Report
-        run: mvn jacoco:report
+      - name: Generate JaCoCo report
+        run: ./mvnw jacoco:report
 
-      - name: Check Code Coverage
+      - name: Check coverage threshold
         shell: bash
         run: |
           python3 - <<'PY'
-          import xml.etree.ElementTree as ET
           import sys
+          import xml.etree.ElementTree as ET
 
           report = "target/site/jacoco/jacoco.xml"
-
           try:
-              tree = ET.parse(report)
+              root = ET.parse(report).getroot()
           except FileNotFoundError:
-              print("ERROR: JaCoCo report not found:")
-              print(report)
+              print(f"JaCoCo report not found at {report}")
               sys.exit(1)
 
-          root = tree.getroot()
           instruction_counter = None
-
           for counter in root.findall("counter"):
               if counter.attrib.get("type") == "INSTRUCTION":
                   instruction_counter = counter
                   break
 
           if instruction_counter is None:
-              print("ERROR: INSTRUCTION coverage data not found.")
+              print("INSTRUCTION counter is missing from the JaCoCo report.")
               sys.exit(1)
 
-          missed = int(instruction_counter.attrib["missed"])
-          covered = int(instruction_counter.attrib["covered"])
+          missed = int(instruction_counter.attrib.get("missed", 0))
+          covered = int(instruction_counter.attrib.get("covered", 0))
           total = missed + covered
 
           if total == 0:
-              print("ERROR: No instructions found in JaCoCo report.")
+              print("No instruction data was found in the JaCoCo report.")
               sys.exit(1)
 
           coverage = (covered / total) * 100
@@ -94,11 +93,9 @@ jobs:
 
           if coverage < required:
               print("QUALITY GATE FAILED")
-              print("Code coverage is below the current project baseline.")
               sys.exit(1)
 
           print("QUALITY GATE PASSED")
-          print("Code coverage meets the project baseline.")
           PY
 
       - name: SonarQube Analysis
@@ -116,7 +113,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Package JAR
-        run: mvn package -DskipTests
+        run: ./mvnw package -DskipTests
 
       - name: Upload JAR Artifact
         uses: actions/upload-artifact@v4
@@ -130,6 +127,3 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco/
-
-
- 
